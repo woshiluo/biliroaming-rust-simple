@@ -1,5 +1,13 @@
 # biliroaming-rust-simple
 
+## Build
+
+```
+git clone https://github.com/woshiluo/biliroaming-rust-simple
+cd biliroaming-rust-simple
+cargo build --release
+```
+
 ## Features
 
 - Only support hk/cn playurl
