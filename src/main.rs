@@ -3,7 +3,7 @@ use actix_web::{get, App, HttpRequest, HttpServer, Responder};
 
 use serde::Deserialize;
 
-use biliroaming_rust_simple::{get_uid, get_url, BiliKey, BiliRomingError, UserInfo};
+use biliroaming_rust_simple::{get_uid, get_url, BiliKey, BiliKeyWeb, BiliRomingError, UserInfo};
 
 use std::collections::HashMap;
 use std::io::Read;
@@ -39,6 +39,46 @@ async fn cnplayurl(
         client,
         &format!(
             "https://api.bilibili.com/pgc/player/api/playurl?{}",
+            req.query_string(),
+        ),
+        user_agent,
+    )
+    .await?;
+
+    log::debug!("Get response: {}", body);
+    Ok(body)
+}
+
+#[get("/pgc/player/web/playurl")]
+async fn cnplayurl_web(
+    req: HttpRequest,
+    key: Query<BiliKeyWeb>,
+) -> Result<impl Responder, BiliRomingError> {
+    let (client, white_list, cache_map) = req
+        .app_data::<(
+            reqwest::Client,
+            Arc<[u32]>,
+            Arc<Mutex<HashMap<String, UserInfo>>>,
+        )>()
+        .unwrap();
+
+    let key: BiliKey = key.into_inner().into();
+    let user_agent = req
+        .headers()
+        .get("user-agent")
+        .ok_or(BiliRomingError::FailedMakeRequest)?
+        .to_str()
+        .map_err(|_| BiliRomingError::FailedMakeRequest)?;
+
+    let user_info = get_uid(client, cache_map, &key, user_agent).await?;
+    if white_list.binary_search(&user_info.mid).is_err() {
+        return Err(BiliRomingError::BlockRequest(user_info.mid));
+    }
+
+    let body = get_url(
+        client,
+        &format!(
+            "https://api.bilibili.com/pgc/player/web/playurl?{}",
             req.query_string(),
         ),
         user_agent,

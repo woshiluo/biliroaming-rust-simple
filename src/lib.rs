@@ -24,6 +24,11 @@ pub struct BiliKey {
     pub appkey: String,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct BiliKeyWeb {
+    pub access_key: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UserInfo {
     pub mid: u32,
@@ -35,6 +40,15 @@ struct BiliResponse {
     pub code: i32,
     pub message: String,
     pub data: Option<UserInfo>,
+}
+
+impl From<BiliKeyWeb> for BiliKey {
+    fn from(key: BiliKeyWeb) -> BiliKey {
+        BiliKey {
+            access_key: key.access_key,
+            appkey: "560c52ccd288fed045859ed18bffd973".to_string(),
+        }
+    }
 }
 
 impl Display for BiliRomingError {
